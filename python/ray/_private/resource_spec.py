@@ -165,12 +165,14 @@ class ResourceSpec(
             num_cpus = ray._private.utils.get_num_cpus()
 
         num_gpus = 0
+        user_specified_accelerator_resource = None if not self.num_gpus else "GPU"
         for (
             accelerator_resource_name
         ) in ray._private.accelerators.get_all_accelerator_resource_names():
             accelerator_manager = (
                 ray._private.accelerators.get_accelerator_manager_for_resource(
-                    accelerator_resource_name
+                    resource_name=accelerator_resource_name,
+                    user_specified_accelator_resource=user_specified_accelerator_resource,
                 )
             )
             num_accelerators = None
