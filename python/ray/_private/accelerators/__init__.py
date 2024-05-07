@@ -33,6 +33,7 @@ def get_all_accelerator_resource_names() -> Set[str]:
 
 def get_accelerator_manager_for_resource(
     resource_name: str,
+    user_specified_accelator_resource: Optional[str] = None,
 ) -> Optional[AcceleratorManager]:
     """Get the corresponding accelerator manager for the given
     accelerator resource name
@@ -55,8 +56,14 @@ def get_accelerator_manager_for_resource(
             resource_name_to_accelerator_manager["GPU"] = AMDGPUAcceleratorManager
         elif IntelGPUAcceleratorManager.get_current_node_num_accelerators() > 0:
             resource_name_to_accelerator_manager["GPU"] = IntelGPUAcceleratorManager
-        else:
+        elif NvidiaGPUAcceleratorManager.get_current_node_num_accelerators() > 0:
             resource_name_to_accelerator_manager["GPU"] = NvidiaGPUAcceleratorManager
+        else:
+            if user_specified_accelator_resource == "GPU":
+                raise ValueError(
+                    "No GPU accelerator found on the current node. "
+                    "Please check the configuration of the node."
+                )
         get_accelerator_manager_for_resource._resource_name_to_accelerator_manager = (
             resource_name_to_accelerator_manager
         )
