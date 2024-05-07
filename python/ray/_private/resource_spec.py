@@ -185,7 +185,15 @@ class ResourceSpec(
             )
             # Check that the number of accelerators that the raylet wants doesn't
             # exceed the amount allowed by visible accelerator ids.
-            if (
+            if num_accelerators is not None and visible_accelerator_ids is None:
+                raise ValueError(
+                    f"Attempting to start raylet with {num_accelerators} "
+                    f"{accelerator_resource_name}, but "
+                    f"{accelerator_manager.get_visible_accelerator_ids_env_var()} "
+                    "cound not find visible accelerator ids"
+                )
+
+            elif (
                 num_accelerators is not None
                 and visible_accelerator_ids is not None
                 and num_accelerators > len(visible_accelerator_ids)
