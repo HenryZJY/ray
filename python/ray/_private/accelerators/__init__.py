@@ -33,7 +33,7 @@ def get_all_accelerator_resource_names() -> Set[str]:
 
 def get_accelerator_manager_for_resource(
     resource_name: str,
-    user_specified_accelator_resource: Optional[str] = None,
+    is_user_specified_resource: bool = False,
 ) -> Optional[AcceleratorManager]:
     """Get the corresponding accelerator manager for the given
     accelerator resource name
@@ -41,9 +41,18 @@ def get_accelerator_manager_for_resource(
     E.g., TPUAcceleratorManager is returned if resource name is "TPU"
     """
     try:
-        return get_accelerator_manager_for_resource._resource_name_to_accelerator_manager.get(  # noqa: E501
+        accelerator_manager = get_accelerator_manager_for_resource._resource_name_to_accelerator_manager.get(  # noqa: E501
             resource_name, None
         )
+        if is_user_specified_resource:
+            # GPU handling
+            if resource_name == "GPU":
+                AMDGPUAcceleratorManager.set_user_specified_resource(True)
+                IntelGPUAcceleratorManager.set_user_specified_resource(True)
+                NvidiaGPUAcceleratorManager.set_user_specified_resource(True)
+            else:
+                accelerator_manager.set_user_specified_resource(True)
+        return accelerator_manager
     except AttributeError:
         # Lazy initialization.
         resource_name_to_accelerator_manager = {
@@ -56,14 +65,8 @@ def get_accelerator_manager_for_resource(
             resource_name_to_accelerator_manager["GPU"] = AMDGPUAcceleratorManager
         elif IntelGPUAcceleratorManager.get_current_node_num_accelerators() > 0:
             resource_name_to_accelerator_manager["GPU"] = IntelGPUAcceleratorManager
-        elif NvidiaGPUAcceleratorManager.get_current_node_num_accelerators() > 0:
-            resource_name_to_accelerator_manager["GPU"] = NvidiaGPUAcceleratorManager
         else:
-            if user_specified_accelator_resource == "GPU":
-                raise ValueError(
-                    "No GPU accelerator found on the current node. "
-                    "Please check the configuration of the node."
-                )
+            resource_name_to_accelerator_manager["GPU"] = NvidiaGPUAcceleratorManager
         get_accelerator_manager_for_resource._resource_name_to_accelerator_manager = (
             resource_name_to_accelerator_manager
         )

@@ -165,14 +165,20 @@ class ResourceSpec(
             num_cpus = ray._private.utils.get_num_cpus()
 
         num_gpus = 0
-        user_specified_accelerator_resource = None if not self.num_gpus else "GPU"
+        is_user_specified_resource = False
         for (
             accelerator_resource_name
         ) in ray._private.accelerators.get_all_accelerator_resource_names():
+            # Decide if user specified the accelerator resource.
+            if accelerator_resource_name in self.resources or (
+                accelerator_resource_name == "GPU" and self.num_gpus
+            ):
+                is_user_specified_resource = True
+
             accelerator_manager = (
                 ray._private.accelerators.get_accelerator_manager_for_resource(
                     resource_name=accelerator_resource_name,
-                    user_specified_accelator_resource=user_specified_accelerator_resource,
+                    is_user_specified_resource=is_user_specified_resource,
                 )
             )
             num_accelerators = None
@@ -190,9 +196,8 @@ class ResourceSpec(
                     f"Attempting to start raylet with {num_accelerators} "
                     f"{accelerator_resource_name}, but "
                     f"{accelerator_manager.get_visible_accelerator_ids_env_var()} "
-                    "cound not find visible accelerator ids"
+                    f"cound not find visible {accelerator_resource_name} ids"
                 )
-
             elif (
                 num_accelerators is not None
                 and visible_accelerator_ids is not None
